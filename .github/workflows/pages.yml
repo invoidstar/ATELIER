@@ -1,0 +1,75 @@
+name: Publish AYUE ATELIER to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "atelier-pages"
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Expand first-release source
+        run: |
+          python3 - <<'PY'
+          import base64, hashlib, io, lzma, shutil, tarfile
+          from pathlib import Path
+          if Path('index.html').exists():
+              print('Editable site files already in repository.')
+          else:
+              source = Path('site-source.tar.xz.b64')
+              packed = base64.b64decode(source.read_text(encoding='ascii'))
+              sha = hashlib.sha256(packed).hexdigest()
+              expected = '4da5dea86403b520695bbcb99bd3026a40fe5e83e45e4f2c538c752c4959f6e8'
+              if sha != expected:
+                  raise RuntimeError('Site source checksum mismatch.')
+              with tarfile.open(fileobj=io.BytesIO(lzma.decompress(packed)), mode='r:') as archive:
+                  for entry in archive:
+                      dest = Path(entry.name)
+                      if not entry.isfile() or dest.is_absolute() or '..' in dest.parts:
+                          raise ValueError('Unsafe site archive path')
+                      dest.parent.mkdir(parents=True, exist_ok=True)
+                      with archive.extractfile(entry) as src, dest.open('wb') as output:
+                          shutil.copyfileobj(src, output)
+              print('AYUE ATELIER source files extracted.')
+          PY
+
+      - name: Commit editable site files to main (initial publish only)
+        run: |
+          if git ls-files --error-unmatch index.html >/dev/null 2>&1; then
+            echo "Site source is already tracked."
+          else
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            rm -f site-source.tar.xz.b64
+            git add -A
+            git commit -m "feat: publish AYUE ATELIER v1.2 with two commission types and refreshed theme"
+            git push origin HEAD:main
+          fi
+
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload static website
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: "."
+
+      - name: Deploy GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
