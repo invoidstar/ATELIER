@@ -58,3 +58,13 @@
 .aside-tip{z-index:0}
 :root[data-theme="dark"] .announcement{background:linear-gradient(96deg,#524063,#70537b)}
 @media(max-width:640px){.service-grid{grid-template-columns:1fr}.brand-text strong{font-size:13px}.service-illustration{height:190px}}
+
+/* V1.2.1 contrast, compact navigation and focus refinement */
+:root[data-theme="dark"] .btn-primary,
+:root[data-theme="dark"] .nav-order,
+:root[data-theme="dark"] .brand-mark,
+:root[data-theme="dark"] .choice-card.selected .choice-check{color:#251a30}
+:root[data-theme="dark"] .btn-primary:hover,
+:root[data-theme="dark"] .nav-order:hover{color:#251a30}
+.brand-text small{font-style:normal}
+@media(max-width:430px){.brand-text small{max-width:142px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.nav-wrap{gap:6px}.brand{gap:7px}}
